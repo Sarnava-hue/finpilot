@@ -1,0 +1,9 @@
+date,description,merchant,amount,transaction_type,category
+2026-09-01,Monthly salary,Company,50000,income,Salary
+2026-09-02,Food order,Swiggy,450,expense,Dining
+2026-09-03,Online shopping,Amazon,1200,expense,Shopping
+2026-09-04,Monthly rent,House Rent,12000,expense,Housing
+2026-09-05,Grocery purchase,Blinkit,850,expense,Groceries
+2026-09-06,Metro travel,Rapid Metro,200,expense,Transportation
+2026-09-07,Streaming subscription,Netflix,649,expense,Entertainment
+2026-09-08,Coffee,Cafe,180,expense,Dining

@@ -1,35 +1,6 @@
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-/* =========================================================
-   SHARED API TYPES
-========================================================= */
-
-export interface Transaction {
-  id: number;
-  date: string;
-  description: string;
-  merchant: string | null;
-  amount: number;
-  transaction_type: "income" | "expense";
-  category: string;
-  source: string | null;
-  confidence: number | null;
-  created_at: string;
-}
-
-export interface UploadResult {
-  filename?: string;
-  imported?: number;
-  failed?: number;
-  errors?: string[];
-  message?: string;
-}
-
-/* =========================================================
-   GENERIC REQUEST HELPER
-========================================================= */
-
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -57,9 +28,38 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
-/* =========================================================
+function periodQuery(year?: number, month?: number) {
+  const query = new URLSearchParams();
+
+  if (year !== undefined) {
+    query.set("year", String(year));
+  }
+
+  if (month !== undefined) {
+    query.set("month", String(month));
+  }
+
+  const value = query.toString();
+
+  return value ? `?${value}` : "";
+}
+
+/* =========================
    TRANSACTIONS
-========================================================= */
+========================= */
+
+export interface Transaction {
+  id: number;
+  date: string;
+  description: string;
+  merchant: string | null;
+  amount: number;
+  transaction_type: "income" | "expense";
+  category: string;
+  source: string | null;
+  confidence: number | null;
+  created_at: string;
+}
 
 export async function getTransactions(params?: {
   transaction_type?: string;
@@ -71,10 +71,7 @@ export async function getTransactions(params?: {
   const query = new URLSearchParams();
 
   if (params?.transaction_type) {
-    query.set(
-      "transaction_type",
-      params.transaction_type
-    );
+    query.set("transaction_type", params.transaction_type);
   }
 
   if (params?.category) {
@@ -96,19 +93,23 @@ export async function getTransactions(params?: {
   const queryString = query.toString();
 
   return request<Transaction[]>(
-    `/api/transactions${
-      queryString ? `?${queryString}` : ""
-    }`
+    `/api/transactions${queryString ? `?${queryString}` : ""}`
   );
 }
 
-/* =========================================================
+/* =========================
    UPLOAD
-========================================================= */
+========================= */
 
-export async function uploadCsv(
-  file: File
-): Promise<UploadResult> {
+export interface UploadResult {
+  filename?: string;
+  imported?: number;
+  failed?: number;
+  errors?: string[];
+  message?: string;
+}
+
+export async function uploadCsv(file: File): Promise<UploadResult> {
   const formData = new FormData();
 
   formData.append("file", file);
@@ -119,9 +120,7 @@ export async function uploadCsv(
   });
 }
 
-export async function uploadPdf(
-  file: File
-): Promise<UploadResult> {
+export async function uploadPdf(file: File): Promise<UploadResult> {
   const formData = new FormData();
 
   formData.append("file", file);
@@ -143,38 +142,29 @@ export async function previewPdf(file: File) {
   });
 }
 
-/* =========================================================
+/* =========================
    DASHBOARD
-========================================================= */
+========================= */
 
-export async function getDashboard() {
-  return request("/api/dashboard");
+export async function getDashboard(
+  year?: number,
+  month?: number
+) {
+  return request(
+    `/api/dashboard${periodQuery(year, month)}`
+  );
 }
 
-/* =========================================================
+/* =========================
    ANALYTICS
-========================================================= */
+========================= */
 
 export async function getMonthlyAnalytics(
   year?: number,
   month?: number
 ) {
-  const query = new URLSearchParams();
-
-  if (year !== undefined) {
-    query.set("year", String(year));
-  }
-
-  if (month !== undefined) {
-    query.set("month", String(month));
-  }
-
-  const queryString = query.toString();
-
   return request(
-    `/api/analytics/monthly${
-      queryString ? `?${queryString}` : ""
-    }`
+    `/api/analytics/monthly${periodQuery(year, month)}`
   );
 }
 
@@ -182,28 +172,14 @@ export async function compareMonthlyAnalytics(
   year?: number,
   month?: number
 ) {
-  const query = new URLSearchParams();
-
-  if (year !== undefined) {
-    query.set("year", String(year));
-  }
-
-  if (month !== undefined) {
-    query.set("month", String(month));
-  }
-
-  const queryString = query.toString();
-
   return request(
-    `/api/analytics/monthly/compare${
-      queryString ? `?${queryString}` : ""
-    }`
+    `/api/analytics/monthly/compare${periodQuery(year, month)}`
   );
 }
 
-/* =========================================================
-   RECURRING PAYMENTS
-========================================================= */
+/* =========================
+   RECURRING
+========================= */
 
 export async function getRecurring() {
   return request("/api/recurring");
@@ -213,29 +189,34 @@ export async function getUpcomingRecurring() {
   return request("/api/recurring/upcoming");
 }
 
-/* =========================================================
-   SPENDING ANOMALIES
-========================================================= */
+/* =========================
+   ANOMALIES
+========================= */
 
 export async function getSpendingAnomalies() {
   return request("/api/anomalies/spending");
 }
 
-/* =========================================================
+/* =========================
    BUDGETS
-========================================================= */
+========================= */
 
 export async function getBudgets() {
   return request("/api/budgets");
 }
 
-export async function getBudgetStatus() {
-  return request("/api/budgets/status");
+export async function getBudgetStatus(
+  year?: number,
+  month?: number
+) {
+  return request(
+    `/api/budgets/status${periodQuery(year, month)}`
+  );
 }
 
-/* =========================================================
+/* =========================
    GOALS
-========================================================= */
+========================= */
 
 export async function getGoals() {
   return request("/api/goals");
@@ -244,35 +225,31 @@ export async function getGoals() {
 export async function getGoalProgress(
   goalId: number | string
 ) {
-  return request(
-    `/api/goals/${goalId}/progress`
-  );
+  return request(`/api/goals/${goalId}/progress`);
 }
 
 export async function getGoalImpact(
   goalId: number | string
 ) {
-  return request(
-    `/api/goals/${goalId}/impact`
-  );
+  return request(`/api/goals/${goalId}/impact`);
 }
 
-/* =========================================================
-   UPCOMING OBLIGATIONS
-========================================================= */
+/* =========================
+   UPCOMING
+========================= */
 
 export async function getUpcoming() {
   return request("/api/upcoming");
 }
 
-/* =========================================================
-   AI AGENT
-========================================================= */
+/* =========================
+   AI ASSISTANT
+========================= */
 
 export async function askAgent(
   question: string,
-  year?: number,
-  month?: number
+  year: number,
+  month: number
 ) {
   return request("/api/agent/ask", {
     method: "POST",
@@ -285,32 +262,23 @@ export async function askAgent(
 }
 
 export async function getMonthlyAISummary(
-  year?: number,
-  month?: number
+  year: number,
+  month: number
 ) {
-  const query = new URLSearchParams();
-
-  if (year !== undefined) {
-    query.set("year", String(year));
-  }
-
-  if (month !== undefined) {
-    query.set("month", String(month));
-  }
-
-  const queryString = query.toString();
-
   return request(
-    `/api/agent/monthly-summary${
-      queryString ? `?${queryString}` : ""
-    }`
+    `/api/agent/monthly-summary${periodQuery(year, month)}`
   );
 }
 
-/* =========================================================
+/* =========================
    DECISION SUPPORT
-========================================================= */
+========================= */
 
-export async function getDecisionSupport() {
-  return request("/api/decision-support");
+export async function getDecisionSupport(
+  year?: number,
+  month?: number
+) {
+  return request(
+    `/api/decision-support${periodQuery(year, month)}`
+  );
 }
