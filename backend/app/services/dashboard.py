@@ -9,7 +9,7 @@ from app.services.anomaly import detect_unusual_spending
 from app.services.budget import get_budget_status
 from app.services.recurring import detect_recurring_payments
 from app.services.goals import get_goal_progress
-
+from app.services.insights import generate_financial_insights
 
 def get_dashboard_data(
     db: Session,
@@ -73,6 +73,11 @@ def get_dashboard_data(
         for transaction in recent_transactions
     ]
 
+    insights = generate_financial_insights(
+        db=db,
+        year=year,
+        month=month,
+    )
     return {
         "period": {
             "year": year,
@@ -84,4 +89,5 @@ def get_dashboard_data(
         "recurring_payments": recurring,
         "goals": goal_progress,
         "recent_transactions": transactions,
+        "insights": insights,
     }

@@ -64,3 +64,36 @@ def test_pdf_parser():
 
     assert transactions[2]["amount"] == 2450.0
     assert transactions[2]["transaction_type"] == "expense"
+    
+def test_financial_insights_with_empty_database():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from app.database import Base
+    from app.services.insights import generate_financial_insights
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+    )
+
+    TestingSessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+    )
+
+    Base.metadata.create_all(bind=engine)
+
+    db = TestingSessionLocal()
+
+    try:
+        insights = generate_financial_insights(
+            db=db,
+            year=2026,
+            month=9,
+        )
+
+        assert isinstance(insights, list)
+    finally:
+        db.close()

@@ -5,7 +5,7 @@ from app.database import get_db
 from app.services.analytics import (
     get_monthly_analytics,
 )
-
+from app.services.analytics import compare_monthly_analytics
 
 router = APIRouter(
     prefix="/api/analytics",
@@ -25,3 +25,14 @@ def monthly_analytics(
         month=month,
     )
     
+@router.get("/monthly/compare")
+def monthly_comparison(
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+):
+    return compare_monthly_analytics(
+        db=db,
+        year=year,
+        month=month,
+    )

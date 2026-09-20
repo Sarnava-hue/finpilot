@@ -12,6 +12,8 @@ from app.routers.goals import router as goals_router
 from app.routers.agent import router as agent_router
 from app.routers.dashboard import router as dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
+from app.routers.upcoming import router as upcoming_router
+from app.routers.decision_support import router as decision_support_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -44,6 +46,8 @@ app.include_router(budget_router)
 app.include_router(goals_router)
 app.include_router(agent_router)
 app.include_router(dashboard_router)
+app.include_router(upcoming_router)
+app.include_router(decision_support_router)
 
 @app.get("/")
 def root():

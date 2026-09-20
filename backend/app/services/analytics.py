@@ -79,3 +79,55 @@ def _next_month(year: int, month: int) -> date:
         return date(year + 1, 1, 1)
 
     return date(year, month + 1, 1)
+
+def compare_monthly_analytics(
+    db: Session,
+    year: int,
+    month: int,
+) -> dict:
+    current = get_monthly_analytics(
+        db=db,
+        year=year,
+        month=month,
+    )
+
+    if month == 1:
+        previous_year = year - 1
+        previous_month = 12
+    else:
+        previous_year = year
+        previous_month = month - 1
+
+    previous = get_monthly_analytics(
+        db=db,
+        year=previous_year,
+        month=previous_month,
+    )
+
+    def percentage_change(current_value: float, previous_value: float):
+        if previous_value == 0:
+            return None
+
+        return round(
+            ((current_value - previous_value) / previous_value) * 100,
+            2,
+        )
+
+    return {
+        "current_month": current,
+        "previous_month": previous,
+        "changes": {
+            "income_percentage": percentage_change(
+                current["total_income"],
+                previous["total_income"],
+            ),
+            "expenses_percentage": percentage_change(
+                current["total_expenses"],
+                previous["total_expenses"],
+            ),
+            "savings_percentage": percentage_change(
+                current["net_savings"],
+                previous["net_savings"],
+            ),
+        },
+    }
