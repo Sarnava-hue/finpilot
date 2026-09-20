@@ -1,0 +1,58 @@
+import { Obligation } from "@/types/obligation";
+
+export const obligations: Obligation[] = [
+  {
+    id: "OBL001",
+    name: "Internet",
+    amount: 999,
+    dueDate: "2026-09-22",
+    type: "bill",
+    recurring: true,
+    status: "upcoming",
+  },
+  {
+    id: "OBL002",
+    name: "Rent",
+    amount: 12000,
+    dueDate: "2026-09-25",
+    type: "rent",
+    recurring: true,
+    status: "upcoming",
+  },
+  {
+    id: "OBL003",
+    name: "Netflix",
+    amount: 649,
+    dueDate: "2026-09-28",
+    type: "subscription",
+    recurring: true,
+    status: "upcoming",
+  },
+  {
+    id: "OBL004",
+    name: "Electricity",
+    amount: 1850,
+    dueDate: "2026-10-01",
+    type: "bill",
+    recurring: true,
+    status: "upcoming",
+  },
+  {
+    id: "OBL005",
+    name: "Spotify",
+    amount: 119,
+    dueDate: "2026-10-03",
+    type: "subscription",
+    recurring: true,
+    status: "upcoming",
+  },
+  {
+    id: "OBL006",
+    name: "Amazon Prime",
+    amount: 299,
+    dueDate: "2026-10-10",
+    type: "subscription",
+    recurring: true,
+    status: "upcoming",
+  },
+];

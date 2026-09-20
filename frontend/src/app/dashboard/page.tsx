@@ -1,5 +1,5 @@
 "use client";
-
+import { obligations } from "@/data/obligations";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -33,7 +33,9 @@ const stats = [
   },
   {
     title: "Upcoming",
-    value: "₹15,498",
+    value: `₹${obligations
+      .reduce((sum, obligation) => sum + obligation.amount, 0)
+      .toLocaleString()}`,
     change: "5 payments",
     positive: false,
     icon: CalendarClock,
@@ -174,7 +176,11 @@ export default function DashboardPage() {
               </p>
 
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                ₹15,498 in recurring payments are expected soon.
+                ₹
+                {obligations
+                  .reduce((sum, obligation) => sum + obligation.amount, 0)
+                  .toLocaleString()}{" "}
+                in recurring payments are expected soon.
               </p>
             </div>
           </div>
