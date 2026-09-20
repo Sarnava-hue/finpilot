@@ -17,6 +17,7 @@ async function request<T>(
 
   if (!response.ok) {
     const text = await response.text();
+
     throw new Error(
       `API ${response.status}: ${text || response.statusText}`
     );
@@ -25,46 +26,115 @@ async function request<T>(
   return response.json();
 }
 
-export async function getDashboard() {
-  return request("/dashboard");
+// -----------------------------
+// Transactions
+// -----------------------------
+
+export async function getTransactions(params?: {
+  transaction_type?: string;
+  category?: string;
+  search?: string;
+  start_date?: string;
+  end_date?: string;
+}) {
+  const query = new URLSearchParams();
+
+  if (params?.transaction_type) {
+    query.set("transaction_type", params.transaction_type);
+  }
+
+  if (params?.category) {
+    query.set("category", params.category);
+  }
+
+  if (params?.search) {
+    query.set("search", params.search);
+  }
+
+  if (params?.start_date) {
+    query.set("start_date", params.start_date);
+  }
+
+  if (params?.end_date) {
+    query.set("end_date", params.end_date);
+  }
+
+  const queryString = query.toString();
+
+  return request(
+    `/api/transactions${queryString ? `?${queryString}` : ""}`
+  );
 }
 
-export async function getTransactions() {
-  return request("/transactions");
-}
+// -----------------------------
+// Upload
+// -----------------------------
 
-export async function getBudgets() {
-  return request("/budget");
-}
-
-export async function getGoals() {
-  return request("/goals");
-}
-
-export async function getRecurring() {
-  return request("/recurring");
-}
-
-export async function getUpcoming() {
-  return request("/upcoming");
-}
-
-export async function getAnalytics() {
-  return request("/analytics");
-}
-
-export async function uploadFile(file: File) {
+export async function uploadPdf(file: File) {
   const formData = new FormData();
+
   formData.append("file", file);
 
-  return request("/upload", {
+  return request("/api/upload/pdf", {
     method: "POST",
     body: formData,
   });
 }
 
+// -----------------------------
+// Dashboard
+// -----------------------------
+
+export async function getDashboard() {
+  return request("/api/dashboard");
+}
+
+// -----------------------------
+// Budgets
+// -----------------------------
+
+export async function getBudgets() {
+  return request("/api/budgets");
+}
+
+// -----------------------------
+// Goals
+// -----------------------------
+
+export async function getGoals() {
+  return request("/api/goals");
+}
+
+// -----------------------------
+// Recurring payments
+// -----------------------------
+
+export async function getRecurring() {
+  return request("/api/recurring");
+}
+
+// -----------------------------
+// Upcoming obligations
+// -----------------------------
+
+export async function getUpcoming() {
+  return request("/api/upcoming");
+}
+
+// -----------------------------
+// Analytics
+// -----------------------------
+
+export async function getAnalytics() {
+  return request("/api/analytics");
+}
+
+// -----------------------------
+// AI Agent
+// -----------------------------
+
 export async function sendChatMessage(message: string) {
-  return request("/agent", {
+  return request("/api/agent", {
     method: "POST",
     body: JSON.stringify({
       message,
