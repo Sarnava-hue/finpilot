@@ -9,12 +9,21 @@ import {
   X,
 } from "lucide-react";
 
+import {
+  uploadCsv,
+  uploadPdf,
+  UploadResult,
+} from "@/lib/api";
+
+
 export default function UploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [result, setResult] = useState<UploadResult | null>(null);
+  const [error, setError] = useState("");
 
   function handleFile(selectedFile: File | undefined) {
     if (!selectedFile) return;
@@ -24,13 +33,15 @@ export default function UploadPage() {
       .pop()
       ?.toLowerCase();
 
-    if (!["csv", "pdf", "xlsx", "xls"].includes(extension || "")) {
-      alert("Please upload a CSV, PDF, XLSX, or XLS file.");
+    if (!["csv", "pdf"].includes(extension || "")) {
+      alert("Please upload a CSV or PDF file.");
       return;
     }
 
     setFile(selectedFile);
     setCompleted(false);
+    setResult(null);
+    setError("");
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -41,27 +52,56 @@ export default function UploadPage() {
     handleFile(droppedFile);
   }
 
-  function processFile() {
+  async function processFile() {
     if (!file) return;
 
     setProcessing(true);
+    setCompleted(false);
+    setResult(null);
+    setError("");
 
-    // Temporary simulation.
-    // This will later call Member 1's backend.
-    setTimeout(() => {
-      setProcessing(false);
+    try {
+      const extension = file.name
+        .split(".")
+        .pop()
+        ?.toLowerCase();
+
+      let response: UploadResult;
+
+      if (extension === "pdf") {
+        response = await uploadPdf(file);
+      } else {
+        response = await uploadCsv(file);
+      }
+
+      setResult(response);
       setCompleted(true);
-    }, 1800);
+    } catch (err) {
+      console.error("Upload failed:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to upload the statement."
+      );
+    } finally {
+      setProcessing(false);
+    }
   }
 
   function removeFile() {
     setFile(null);
     setCompleted(false);
+    setResult(null);
+    setError("");
 
     if (inputRef.current) {
       inputRef.current.value = "";
     }
   }
+
+  const imported = result?.imported ?? 0;
+  const failed = result?.failed ?? 0;
 
   return (
     <div className="p-8">
@@ -93,7 +133,7 @@ export default function UploadPage() {
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,.pdf,.xlsx,.xls"
+            accept=".csv,.pdf"
             className="hidden"
             onChange={(event) =>
               handleFile(event.target.files?.[0])
@@ -120,10 +160,6 @@ export default function UploadPage() {
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">
               CSV
             </span>
-
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">
-              Excel
-            </span>
           </div>
         </div>
 
@@ -133,7 +169,7 @@ export default function UploadPage() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="rounded-xl bg-slate-100 p-3">
-                  {file.name.endsWith(".pdf") ? (
+                  {file.name.toLowerCase().endsWith(".pdf") ? (
                     <FileText size={22} className="text-slate-700" />
                   ) : (
                     <FileSpreadsheet
@@ -156,7 +192,11 @@ export default function UploadPage() {
 
               {!processing && !completed && (
                 <button
-                  onClick={removeFile}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    removeFile();
+                  }}
                   className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                 >
                   <X size={18} />
@@ -164,8 +204,9 @@ export default function UploadPage() {
               )}
             </div>
 
-            {!completed && (
+            {!completed && !error && (
               <button
+                type="button"
                 onClick={(event) => {
                   event.stopPropagation();
                   processFile();
@@ -179,24 +220,69 @@ export default function UploadPage() {
               </button>
             )}
 
-            {completed && (
+            {error && (
+              <div className="mt-5 rounded-xl bg-red-50 p-4">
+                <p className="text-sm font-semibold text-red-800">
+                  Upload failed
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-red-700">
+                  {error}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={processFile}
+                  className="mt-3 text-sm font-semibold text-red-700 hover:text-red-800"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+
+            {completed && result && (
               <div className="mt-5 rounded-xl bg-emerald-50 p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <CheckCircle2
                     size={20}
-                    className="text-emerald-600"
+                    className="mt-0.5 text-emerald-600"
                   />
 
                   <div>
                     <p className="text-sm font-semibold text-emerald-800">
-                      Statement analyzed successfully
+                      Statement processed successfully
                     </p>
 
                     <p className="mt-1 text-xs text-emerald-700">
-                      342 transactions detected and ready to review.
+                      {result.message ||
+                        `${imported} transactions imported successfully.`}
                     </p>
+
+                    <div className="mt-3 flex gap-4 text-xs text-emerald-700">
+                      <span>
+                        Imported: <strong>{imported}</strong>
+                      </span>
+
+                      <span>
+                        Failed: <strong>{failed}</strong>
+                      </span>
+                    </div>
                   </div>
                 </div>
+
+                {result.errors && result.errors.length > 0 && (
+                  <div className="mt-3 rounded-lg bg-white/70 p-3">
+                    <p className="text-xs font-semibold text-slate-700">
+                      Processing notes
+                    </p>
+
+                    <ul className="mt-1 list-disc pl-5 text-xs text-slate-600">
+                      {result.errors.slice(0, 5).map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 <a
                   href="/transactions"

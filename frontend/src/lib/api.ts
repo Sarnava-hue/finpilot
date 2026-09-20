@@ -70,7 +70,15 @@ export async function getTransactions(params?: {
    UPLOAD
 ========================= */
 
-export async function uploadCsv(file: File) {
+export interface UploadResult {
+  filename?: string;
+  imported?: number;
+  failed?: number;
+  errors?: string[];
+  message?: string;
+}
+
+export async function uploadCsv(file: File): Promise<UploadResult> {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -80,11 +88,11 @@ export async function uploadCsv(file: File) {
   });
 }
 
-export async function uploadPdf(file: File) {
+export async function uploadPdf(file: File): Promise<UploadResult> {
   const formData = new FormData();
   formData.append("file", file);
 
-  return request("/api/upload/pdf", {
+  return request<UploadResult>("/api/upload/pdf", {
     method: "POST",
     body: formData,
   });
