@@ -1,6 +1,35 @@
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
+/* =========================================================
+   SHARED API TYPES
+========================================================= */
+
+export interface Transaction {
+  id: number;
+  date: string;
+  description: string;
+  merchant: string | null;
+  amount: number;
+  transaction_type: "income" | "expense";
+  category: string;
+  source: string | null;
+  confidence: number | null;
+  created_at: string;
+}
+
+export interface UploadResult {
+  filename?: string;
+  imported?: number;
+  failed?: number;
+  errors?: string[];
+  message?: string;
+}
+
+/* =========================================================
+   GENERIC REQUEST HELPER
+========================================================= */
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -10,7 +39,9 @@ async function request<T>(
     headers: {
       ...(options.body instanceof FormData
         ? {}
-        : { "Content-Type": "application/json" }),
+        : {
+            "Content-Type": "application/json",
+          }),
       ...options.headers,
     },
   });
@@ -23,12 +54,12 @@ async function request<T>(
     );
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
-/* =========================
+/* =========================================================
    TRANSACTIONS
-========================= */
+========================================================= */
 
 export async function getTransactions(params?: {
   transaction_type?: string;
@@ -36,11 +67,14 @@ export async function getTransactions(params?: {
   search?: string;
   start_date?: string;
   end_date?: string;
-}) {
+}): Promise<Transaction[]> {
   const query = new URLSearchParams();
 
   if (params?.transaction_type) {
-    query.set("transaction_type", params.transaction_type);
+    query.set(
+      "transaction_type",
+      params.transaction_type
+    );
   }
 
   if (params?.category) {
@@ -61,35 +95,35 @@ export async function getTransactions(params?: {
 
   const queryString = query.toString();
 
-  return request(
-    `/api/transactions${queryString ? `?${queryString}` : ""}`
+  return request<Transaction[]>(
+    `/api/transactions${
+      queryString ? `?${queryString}` : ""
+    }`
   );
 }
 
-/* =========================
+/* =========================================================
    UPLOAD
-========================= */
+========================================================= */
 
-export interface UploadResult {
-  filename?: string;
-  imported?: number;
-  failed?: number;
-  errors?: string[];
-  message?: string;
-}
-
-export async function uploadCsv(file: File): Promise<UploadResult> {
+export async function uploadCsv(
+  file: File
+): Promise<UploadResult> {
   const formData = new FormData();
+
   formData.append("file", file);
 
-  return request("/api/upload/csv", {
+  return request<UploadResult>("/api/upload/csv", {
     method: "POST",
     body: formData,
   });
 }
 
-export async function uploadPdf(file: File): Promise<UploadResult> {
+export async function uploadPdf(
+  file: File
+): Promise<UploadResult> {
   const formData = new FormData();
+
   formData.append("file", file);
 
   return request<UploadResult>("/api/upload/pdf", {
@@ -100,6 +134,7 @@ export async function uploadPdf(file: File): Promise<UploadResult> {
 
 export async function previewPdf(file: File) {
   const formData = new FormData();
+
   formData.append("file", file);
 
   return request("/api/upload/pdf/preview", {
@@ -108,63 +143,67 @@ export async function previewPdf(file: File) {
   });
 }
 
-/* =========================
+/* =========================================================
    DASHBOARD
-========================= */
+========================================================= */
 
 export async function getDashboard() {
   return request("/api/dashboard");
 }
 
-/* =========================
+/* =========================================================
    ANALYTICS
-========================= */
+========================================================= */
 
-export async function getMonthlyAnalytics(params?: {
-  year?: number;
-  month?: number;
-}) {
+export async function getMonthlyAnalytics(
+  year?: number,
+  month?: number
+) {
   const query = new URLSearchParams();
 
-  if (params?.year !== undefined) {
-    query.set("year", String(params.year));
+  if (year !== undefined) {
+    query.set("year", String(year));
   }
 
-  if (params?.month !== undefined) {
-    query.set("month", String(params.month));
+  if (month !== undefined) {
+    query.set("month", String(month));
   }
 
   const queryString = query.toString();
 
   return request(
-    `/api/analytics/monthly${queryString ? `?${queryString}` : ""}`
+    `/api/analytics/monthly${
+      queryString ? `?${queryString}` : ""
+    }`
   );
 }
 
-export async function compareMonthlyAnalytics(params?: {
-  year?: number;
-  month?: number;
-}) {
+export async function compareMonthlyAnalytics(
+  year?: number,
+  month?: number
+) {
   const query = new URLSearchParams();
 
-  if (params?.year !== undefined) {
-    query.set("year", String(params.year));
+  if (year !== undefined) {
+    query.set("year", String(year));
   }
 
-  if (params?.month !== undefined) {
-    query.set("month", String(params.month));
+  if (month !== undefined) {
+    query.set("month", String(month));
   }
 
   const queryString = query.toString();
 
   return request(
-    `/api/analytics/monthly/compare${queryString ? `?${queryString}` : ""}`
+    `/api/analytics/monthly/compare${
+      queryString ? `?${queryString}` : ""
+    }`
   );
 }
 
-/* =========================
-   RECURRING
-========================= */
+/* =========================================================
+   RECURRING PAYMENTS
+========================================================= */
 
 export async function getRecurring() {
   return request("/api/recurring");
@@ -174,17 +213,17 @@ export async function getUpcomingRecurring() {
   return request("/api/recurring/upcoming");
 }
 
-/* =========================
-   ANOMALIES
-========================= */
+/* =========================================================
+   SPENDING ANOMALIES
+========================================================= */
 
 export async function getSpendingAnomalies() {
   return request("/api/anomalies/spending");
 }
 
-/* =========================
+/* =========================================================
    BUDGETS
-========================= */
+========================================================= */
 
 export async function getBudgets() {
   return request("/api/budgets");
@@ -194,43 +233,51 @@ export async function getBudgetStatus() {
   return request("/api/budgets/status");
 }
 
-/* =========================
+/* =========================================================
    GOALS
-========================= */
+========================================================= */
 
 export async function getGoals() {
   return request("/api/goals");
 }
 
-export async function getGoalProgress(goalId: number | string) {
-  return request(`/api/goals/${goalId}/progress`);
+export async function getGoalProgress(
+  goalId: number | string
+) {
+  return request(
+    `/api/goals/${goalId}/progress`
+  );
 }
 
-export async function getGoalImpact(goalId: number | string) {
-  return request(`/api/goals/${goalId}/impact`);
+export async function getGoalImpact(
+  goalId: number | string
+) {
+  return request(
+    `/api/goals/${goalId}/impact`
+  );
 }
 
-/* =========================
+/* =========================================================
    UPCOMING OBLIGATIONS
-========================= */
+========================================================= */
 
 export async function getUpcoming() {
   return request("/api/upcoming");
 }
 
-/* =========================
+/* =========================================================
    AI AGENT
-========================= */
+========================================================= */
 
-export async function sendChatMessage(
-  message: string,
+export async function askAgent(
+  question: string,
   year?: number,
   month?: number
 ) {
   return request("/api/agent/ask", {
     method: "POST",
     body: JSON.stringify({
-      question: message,
+      question,
       year,
       month,
     }),
@@ -254,13 +301,15 @@ export async function getMonthlyAISummary(
   const queryString = query.toString();
 
   return request(
-    `/api/agent/monthly-summary${queryString ? `?${queryString}` : ""}`
+    `/api/agent/monthly-summary${
+      queryString ? `?${queryString}` : ""
+    }`
   );
 }
 
-/* =========================
+/* =========================================================
    DECISION SUPPORT
-========================= */
+========================================================= */
 
 export async function getDecisionSupport() {
   return request("/api/decision-support");
