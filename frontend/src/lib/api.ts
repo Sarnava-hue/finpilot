@@ -26,9 +26,9 @@ async function request<T>(
   return response.json();
 }
 
-// -----------------------------
-// Transactions
-// -----------------------------
+/* =========================
+   TRANSACTIONS
+========================= */
 
 export async function getTransactions(params?: {
   transaction_type?: string;
@@ -66,13 +66,22 @@ export async function getTransactions(params?: {
   );
 }
 
-// -----------------------------
-// Upload
-// -----------------------------
+/* =========================
+   UPLOAD
+========================= */
+
+export async function uploadCsv(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return request("/api/upload/csv", {
+    method: "POST",
+    body: formData,
+  });
+}
 
 export async function uploadPdf(file: File) {
   const formData = new FormData();
-
   formData.append("file", file);
 
   return request("/api/upload/pdf", {
@@ -81,63 +90,170 @@ export async function uploadPdf(file: File) {
   });
 }
 
-// -----------------------------
-// Dashboard
-// -----------------------------
+export async function previewPdf(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return request("/api/upload/pdf/preview", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+/* =========================
+   DASHBOARD
+========================= */
 
 export async function getDashboard() {
   return request("/api/dashboard");
 }
 
-// -----------------------------
-// Budgets
-// -----------------------------
+/* =========================
+   ANALYTICS
+========================= */
 
-export async function getBudgets() {
-  return request("/api/budgets");
+export async function getMonthlyAnalytics(params?: {
+  year?: number;
+  month?: number;
+}) {
+  const query = new URLSearchParams();
+
+  if (params?.year !== undefined) {
+    query.set("year", String(params.year));
+  }
+
+  if (params?.month !== undefined) {
+    query.set("month", String(params.month));
+  }
+
+  const queryString = query.toString();
+
+  return request(
+    `/api/analytics/monthly${queryString ? `?${queryString}` : ""}`
+  );
 }
 
-// -----------------------------
-// Goals
-// -----------------------------
+export async function compareMonthlyAnalytics(params?: {
+  year?: number;
+  month?: number;
+}) {
+  const query = new URLSearchParams();
 
-export async function getGoals() {
-  return request("/api/goals");
+  if (params?.year !== undefined) {
+    query.set("year", String(params.year));
+  }
+
+  if (params?.month !== undefined) {
+    query.set("month", String(params.month));
+  }
+
+  const queryString = query.toString();
+
+  return request(
+    `/api/analytics/monthly/compare${queryString ? `?${queryString}` : ""}`
+  );
 }
 
-// -----------------------------
-// Recurring payments
-// -----------------------------
+/* =========================
+   RECURRING
+========================= */
 
 export async function getRecurring() {
   return request("/api/recurring");
 }
 
-// -----------------------------
-// Upcoming obligations
-// -----------------------------
+export async function getUpcomingRecurring() {
+  return request("/api/recurring/upcoming");
+}
+
+/* =========================
+   ANOMALIES
+========================= */
+
+export async function getSpendingAnomalies() {
+  return request("/api/anomalies/spending");
+}
+
+/* =========================
+   BUDGETS
+========================= */
+
+export async function getBudgets() {
+  return request("/api/budgets");
+}
+
+export async function getBudgetStatus() {
+  return request("/api/budgets/status");
+}
+
+/* =========================
+   GOALS
+========================= */
+
+export async function getGoals() {
+  return request("/api/goals");
+}
+
+export async function getGoalProgress(goalId: number | string) {
+  return request(`/api/goals/${goalId}/progress`);
+}
+
+export async function getGoalImpact(goalId: number | string) {
+  return request(`/api/goals/${goalId}/impact`);
+}
+
+/* =========================
+   UPCOMING OBLIGATIONS
+========================= */
 
 export async function getUpcoming() {
   return request("/api/upcoming");
 }
 
-// -----------------------------
-// Analytics
-// -----------------------------
+/* =========================
+   AI AGENT
+========================= */
 
-export async function getAnalytics() {
-  return request("/api/analytics");
-}
-
-// -----------------------------
-// AI Agent
-// -----------------------------
-
-export async function sendChatMessage(message: string) {
-  return request("/api/agent", {
+export async function sendChatMessage(
+  message: string,
+  year?: number,
+  month?: number
+) {
+  return request("/api/agent/ask", {
     method: "POST",
     body: JSON.stringify({
-      message,
+      question: message,
+      year,
+      month,
     }),
   });
+}
+
+export async function getMonthlyAISummary(
+  year?: number,
+  month?: number
+) {
+  const query = new URLSearchParams();
+
+  if (year !== undefined) {
+    query.set("year", String(year));
+  }
+
+  if (month !== undefined) {
+    query.set("month", String(month));
+  }
+
+  const queryString = query.toString();
+
+  return request(
+    `/api/agent/monthly-summary${queryString ? `?${queryString}` : ""}`
+  );
+}
+
+/* =========================
+   DECISION SUPPORT
+========================= */
+
+export async function getDecisionSupport() {
+  return request("/api/decision-support");
 }
