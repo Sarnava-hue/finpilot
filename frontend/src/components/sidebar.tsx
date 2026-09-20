@@ -12,6 +12,7 @@ import {
   MessageCircle,
   FileText,
   Settings,
+  UploadCloud,
 } from "lucide-react";
 
 const navigation = [
@@ -19,6 +20,11 @@ const navigation = [
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Upload Data",
+    href: "/upload",
+    icon: UploadCloud,
   },
   {
     name: "Transactions",
