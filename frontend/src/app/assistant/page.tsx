@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import {
   ArrowUp,
   Bot,
@@ -26,7 +26,7 @@ const initialMessages: ChatMessage[] = [
     role: "assistant",
     content:
       "Hi! I'm FinPilot. I can help you understand your spending, budgets, recurring payments, upcoming obligations, and financial goals.",
-    timestamp: new Date().toISOString(),
+    timestamp: "",
   },
 ];
 
@@ -36,45 +36,50 @@ export default function AssistantPage() {
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const messageIdRef = useRef(0);
 
   async function sendMessage(question?: string) {
-    const text = (question ?? input).trim();
+  const text = (question ?? input).trim();
 
-    if (!text || isLoading) return;
+  if (!text || isLoading) return;
 
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: text,
+  messageIdRef.current += 1;
+
+  const userMessageId = `user-${messageIdRef.current}`;
+
+  const userMessage: ChatMessage = {
+    id: userMessageId,
+    role: "user",
+    content: text,
+    timestamp: new Date().toISOString(),
+  };
+
+  setMessages((current) => [...current, userMessage]);
+  setInput("");
+  setIsLoading(true);
+
+  // Temporary mock response.
+  // This will later call Member 1's backend:
+  // POST /api/chat
+
+  setTimeout(() => {
+    messageIdRef.current += 1;
+
+    const assistantMessage: ChatMessage = {
+      id: `assistant-${messageIdRef.current}`,
+      role: "assistant",
+      content: generateMockResponse(text),
       timestamp: new Date().toISOString(),
     };
 
-    setMessages((current) => [...current, userMessage]);
-    setInput("");
-    setIsLoading(true);
+    setMessages((current) => [
+      ...current,
+      assistantMessage,
+    ]);
 
-    // Temporary mock response.
-    // This will later call Member 1's backend:
-    // POST /api/chat
-
-    setTimeout(() => {
-      const response = generateMockResponse(text);
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: response,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((current) => [
-        ...current,
-        assistantMessage,
-      ]);
-
-      setIsLoading(false);
-    }, 900);
-  }
+    setIsLoading(false);
+  }, 900);
+}
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -266,6 +271,10 @@ function TypingIndicator() {
 }
 
 function formatTime(timestamp: string) {
+  if (!timestamp) {
+    return "";
+  }
+
   return new Date(timestamp).toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
